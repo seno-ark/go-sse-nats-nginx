@@ -1,0 +1,57 @@
+version: '3.8'
+
+services:
+
+  nats-server:
+    image: 'nats:alpine'
+    expose:
+      - "4222"
+    ports:
+      - "8222:8222"
+    hostname: nats-server
+
+  go-api:
+    build:
+      context: ./go-api
+    expose:
+      - "9090"
+    depends_on:
+      - nats-server
+    environment:
+      - PORT=9090
+      - NAME=GO-API
+      - NATS_URI=nats://nats-server:4222
+
+  go-sse1:
+    build:
+      context: ./go-sse
+    expose:
+      - "3030"
+    depends_on:
+      - nats-server
+    environment:
+      - PORT=3030
+      - NAME=GO-SSE-1
+      - NATS_URI=nats://nats-server:4222
+
+  go-sse2:
+    build:
+      context: ./go-sse
+    expose:
+      - "3030"
+    depends_on:
+      - nats-server
+    environment:
+      - PORT=3030
+      - NAME=GO-SSE-2
+      - NATS_URI=nats://nats-server:4222
+
+  nginx-server:
+    build:
+      context: ./nginx
+    ports:
+      - "80:80"
+    depends_on:
+      - go-api
+      - go-sse1
+      - go-sse2
